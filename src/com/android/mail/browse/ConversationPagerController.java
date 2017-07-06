@@ -27,6 +27,8 @@ import android.graphics.drawable.Drawable;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
+import android.view.animation.Interpolator;
+import android.widget.Scroller;
 
 import com.android.mail.R;
 import com.android.mail.graphics.PageMarginDrawable;
@@ -38,6 +40,7 @@ import com.android.mail.ui.ActivityController;
 import com.android.mail.ui.RestrictedActivity;
 import com.android.mail.utils.LogUtils;
 import com.android.mail.utils.Utils;
+import java.lang.reflect.Field;
 
 /**
  * A simple controller for a {@link ViewPager} of conversations.
@@ -93,6 +96,7 @@ public class ConversationPagerController {
             ActivityController controller) {
         mFragmentManager = activity.getFragmentManager();
         mPager = (ViewPager) activity.findViewById(R.id.conversation_pager);
+        setViewPagerScrollSpeed();
         mActivityController = controller;
         setupPageMargin(activity.getActivityContext());
     }
@@ -287,4 +291,40 @@ public class ConversationPagerController {
         mPager.setPageMarginDrawable(gutterDrawable);
     }
 
+    private void setViewPagerScrollSpeed(){
+        try {
+            Field mScroller = null;
+            mScroller = ViewPager.class.getDeclaredField("mScroller");
+            mScroller.setAccessible(true);
+            FixedSpeedScroller scroller = new FixedSpeedScroller(mPager.getContext());
+            mScroller.set(mPager, scroller);
+        }catch(Exception e){
+        }
+    }
+
+    public class FixedSpeedScroller extends Scroller {
+	 private int mDuration = 0;
+
+        public FixedSpeedScroller(Context context) {
+            super(context);
+        }
+
+        public FixedSpeedScroller(Context context, Interpolator interpolator) {
+            super(context, interpolator);
+        }
+
+        public FixedSpeedScroller(Context context, Interpolator interpolator, boolean flywheel) {
+            super(context, interpolator, flywheel);
+        }
+
+        @Override
+        public void startScroll(int startX, int startY, int dx, int dy, int duration) {
+            super.startScroll(startX, startY, dx, dy, mDuration);
+        }
+
+        @Override
+        public void startScroll(int startX, int startY, int dx, int dy) {
+            super.startScroll(startX, startY, dx, dy, mDuration);
+        }
+    }
 }
